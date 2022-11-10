@@ -15,6 +15,8 @@ void setup() {
   Serial.begin(9600);
 }
 
+bool denseBlock;
+
 void loop() {
   digitalWrite(TRIG, LOW);
 
@@ -37,9 +39,14 @@ void loop() {
     if (distance < 15) {
       digitalWrite(greenLED, HIGH);
       digitalWrite(redLED, LOW);
+      denseBlock = false
     } else {
       digitalWrite(greenLED, LOW);
       digitalWrite(redLED, HIGH);
+      denseBlock = false
+   //if(denseBlock == true){}
+   //else{}
+      
     }
     delay(1000);
   }
