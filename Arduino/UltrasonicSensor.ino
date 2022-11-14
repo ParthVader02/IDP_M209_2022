@@ -1,53 +1,60 @@
-#define ECHO 2
-#define TRIG 3
-#define redLED 5
-#define greenLED 4
+int echoPin = 2;
+int trigPin = 3;
+int greenLedPin = 4;
+int redLedPin = 5;
 
-long duration;
-int distance;
+void setup() { 
+ Serial.begin(9600);           // set up Serial library at 9600 bps
 
-void setup() {
-  pinMode(TRIG, OUTPUT);
-  pinMode(ECHO, INPUT);
-  pinMode(redLED, OUTPUT);
-  pinMode(greenLED, OUTPUT);
-
-  Serial.begin(9600);
+  //set ultrasonics sensor and led pins to read and write
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  pinMode(redLedPin, OUTPUT);
+  pinMode(greenLedPin, OUTPUT);
 }
 
-bool denseBlock;
-
 void loop() {
-  digitalWrite(TRIG, LOW);
+  ultrasonic_read();
+}
 
-  delayMicroseconds(2);
+void ultrasonic_read() {
+  long duration;
+  int distance[100];
 
-  digitalWrite(TRIG, HIGH);
+  for (int i = 0; i < 100; i++) {
+    digitalWrite(trigPin, LOW);
+    delayMicroseconds(2);
+    digitalWrite(trigPin, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin, LOW);
 
-  delayMicroseconds(10);
+    //calculate duration of pulse and distance to object
+    duration = pulseIn(echoPin, HIGH);
 
-  digitalWrite(TRIG, LOW);
-
-  duration = pulseIn(ECHO, HIGH);
-
-  distance = duration * 0.034/2;
-
-  if (distance < 60){
-    Serial.print("Distance: ");
-    Serial.println(distance);
-
-    if (distance < 15) {
-      digitalWrite(greenLED, HIGH);
-      digitalWrite(redLED, LOW);
-      denseBlock = false
+    //check if input is valid, if not then loop again
+    int dis = duration * 0.034/2;
+    if (dis < 60) {
+      distance[i] = dis;
     } else {
-      digitalWrite(greenLED, LOW);
-      digitalWrite(redLED, HIGH);
-      denseBlock = false
-   //if(denseBlock == true){}
-   //else{}
-      
+      i--;
     }
-    delay(1000);
+  }
+
+  //calculate mean distance
+  int mean_distance = 0;
+  for (int i = 0; i < 100; i++) {
+    mean_distance += distance[i];
+  }
+  mean_distance = mean_distance / 100;
+  Serial.print("Distance: ");
+  Serial.println(mean_distance);
+
+  // turn red or green LED on
+  if (mean_distance < 15) {
+      digitalWrite(greenLedPin, HIGH);
+      digitalWrite(redLedPin, LOW);
+  } else {
+      digitalWrite(greenLedPin, LOW);
+      digitalWrite(redLedPin, HIGH);
   }
 }
