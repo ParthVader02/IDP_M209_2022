@@ -20,7 +20,7 @@ void setup() {
    Serial.begin(9600);
   pinMode(lineSensorpin_1, INPUT); // 1 = white, 0 = black
   pinMode(lineSensorpin_2, INPUT);
-   pinMode(lineSensorpin_3, INPUT); // 1 = white, 0 = black
+  pinMode(lineSensorpin_3, INPUT); // 1 = white, 0 = black
   pinMode(lineSensorpin_4, INPUT);
 
   if (!AFMS.begin()) {         // create with the default frequency 1.6KHz
@@ -77,14 +77,14 @@ void loop() {
     startFlag = 1;
   }
   if (hasBlock == false){
-    if ((midBlock == true) && (left_lineSensor == 0 && right_lineSensor == 1)){
+    if ((midBlock == true) && (v_left_lineSensor == 0 left_lineSensor == 0 && right_lineSensor == 1 && v_right_lineSensor == 1)){
       Serial.println("RIGHT");
       //pickup
       hasBlock = true;
       junctCount++;
       //reverse, turn right, continue line following, ignore the rest of the blocks at J4/5/6
       }  
-      else if ((firstBlock == true || lastBlock == true) && (left_lineSensor == 1 && right_lineSensor == 0)){
+      else if ((firstBlock == true || lastBlock == true) && (v_left_lineSensor == 0 && left_lineSensor == 1 && right_lineSensor == 0 && v_right_lineSensor == 0)){
       Serial.println("LEFT");
       //pickup
       hasBlock = true;
@@ -93,22 +93,24 @@ void loop() {
       }  
     }
   }
-  else if (left_lineSensor == 0 && right_lineSensor == 0){ //if no white detected on middle 2 sensors
+  else if (v_left_lineSensor == 0 && left_lineSensor == 0 && right_lineSensor == 0 && v_right_lineSensor == 0 ){ //if no white detected on middle 2 sensors
     left->run(FORWARD);
     right->run(BACKWARD);
     }
-  else if(left_lineSensor == 1 && right_lineSensor ==0){
+  else if((v_left_lineSensor == 1 && left_lineSensor == 1 && right_lineSensor ==0 (v_right_lineSensor == 0 ){
     Serial.println("LEFT");
     junctCount++;
-  else if (left_lineSensor == 0 && right_lineSensor == 1){
+  else if (v_left_lineSensor == 1 && left_lineSensor == 0 && right_lineSensor == 1 && v_right_lineSensor == 1){
     Serial.println("RIGHT");
     junctCount++;
     //deposit block
     if (denseTrue = true){
       //go to red
+      Serial.println("RED");
     }
     else {
-      //go tot green
+      Serial.println("GREEN");
+      //go to green
 
     }
     hasBlock = false; 
