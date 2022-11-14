@@ -7,6 +7,12 @@ Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 Adafruit_DCMotor *left = AFMS.getMotor(3);
 Adafruit_DCMotor *right = AFMS.getMotor(4);
 
+//initialise ultrasonic sensor and LED pins
+int echoPin = 2;
+int trigPin = 3;
+int greenLedPin = 4;
+int redLedPin = 5;
+
 //initialise line_sensor pins
 int lineSensorpin_1 = 8;
 int lineSensorpin_2 = 9;
@@ -19,6 +25,13 @@ void setup() {
  //run startup sequence, flash some LEDs to tell us its alive
 
   Serial.begin(9600);           // set up Serial library at 9600 bps
+
+  //set ultrasonics sensor and led pins to read and write
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  pinMode(redLedPin, OUTPUT);
+  pinMode(greenLedPin, OUTPUT);
+  
   //set digital line sensor pins to read
   pinMode(lineSensorpin_1, INPUT); 
   pinMode(lineSensorpin_2, INPUT);
@@ -74,6 +87,7 @@ void loop() {
   //if junctions seen, do things
 
   //if block there, run ultrasound sensor, LED to show type, save type to memory
+  ultrasonic_read();
   // to check if block exists -> CV
 
   //run servo motor to capture block
@@ -111,5 +125,45 @@ void start_to_line(int count, int line_detect){
       right->run(FORWARD);
     }
     startFlag = 1;
+  }
+}
+
+void ultrasonic_read() {
+  long duration;
+  int distance[100];
+
+  for (int i = 0; i < 100; i++) {
+    digitalWrite(trigPin, LOW);
+    delayMicroseconds(2);
+    digitalWrite(trigPin, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin, LOW);
+
+    //calculate duration of pulse and distance to object
+    duration = pulseIn(echoPin, HIGH);
+
+    //check if input is valid, if not then loop again
+    int dis = duration * 0.034/2;
+    if (dis < 60) {
+      distance[i] = dis;
+    } else {
+      i--;
+    }
+  }
+
+  //calculate mean distance
+  int mean_distance = 0;
+  for (int i = 0; i < 100; i++) {
+    mean_distance += distance[i];
+  }
+  mean_distance = mean_distance / 100;
+
+  // turn red or green LED on
+  if (mean_distance < 15) {
+      digitalWrite(greenLedPin, HIGH);
+      digitalWrite(redLedPin, LOW);
+  } else {
+      digitalWrite(greenLedPin, LOW);
+      digitalWrite(redLedPin, HIGH);
   }
 }
