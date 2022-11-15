@@ -99,9 +99,11 @@ void loop() {
     }
   else if((v_left_lineSensor == 1 && left_lineSensor == 1 && right_lineSensor ==0 (v_right_lineSensor == 0 ){
     Serial.println("LEFT");
+    //motor left
     junctCount++;
   else if (v_left_lineSensor == 1 && left_lineSensor == 0 && right_lineSensor == 1 && v_right_lineSensor == 1){
     Serial.println("RIGHT");
+    //motor right
     junctCount++;
     //deposit block
     if (denseTrue = true){
