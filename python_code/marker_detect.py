@@ -19,9 +19,9 @@ def track(mtx, dist, num):
             crop=frame[y-num:y+h+num,x-num:x+w+num]
             cv2.imshow('crop', crop)
             print(x,y,w,h)
-            pts2 = np.float32([[0,200],[200,0],[0,200],[200,200]])
+            pts2 = np.float32([[0,200],[200,200],[200,0],[0,0]])
             M = cv2.getPerspectiveTransform(corners[0],pts2)
-            dst = cv2.warpPerspective(frame,M,(500,400))
+            dst = cv2.warpPerspective(frame,M,(200,200))
             cv2.imshow('prospective_transf',dst)
 
         cv2.imshow('frame', frame)
