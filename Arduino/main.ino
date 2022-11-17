@@ -1,4 +1,5 @@
 #include <Adafruit_MotorShield.h>
+#include <Servo.h>
 
 // Create the motor shield object with the default I2C address
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
@@ -18,6 +19,9 @@ int trigPin = 3;
 int greenLedPin = 4;
 int redLedPin = 5;
 
+Servo myservo;
+int pos = 0;
+
 
 void setup() {
 
@@ -33,6 +37,8 @@ void setup() {
   pinMode(echoPin, INPUT);
   pinMode(redLedPin, OUTPUT);
   pinMode(greenLedPin, OUTPUT);
+
+  myservo.attach(9);
 
 //check if motorshield is connected
   if (!AFMS.begin()) {         // create with the default frequency 1.6KHz
@@ -51,6 +57,51 @@ void setup() {
   right->run(RELEASE);
 }
 
+int ultrasonic_read() {
+  long duration;
+  int distance[100];
+  int block_type;
+  for (int i = 0; i < 100; i++) {
+    digitalWrite(trigPin, LOW);
+    delayMicroseconds(2);
+    digitalWrite(trigPin, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin, LOW);
+
+    //calculate duration of pulse and distance to object
+    duration = pulseIn(echoPin, HIGH);
+
+    //check if input is valid, if not then loop again
+    int dis = duration * 0.034/2;
+    if (dis < 60) {
+      distance[i] = dis;
+    } 
+    else {
+      i--;
+    }
+  }
+
+  //calculate mean distance
+  int mean_distance = 0;
+  for (int i = 0; i < 100; i++) {
+    mean_distance += distance[i];
+  }
+  mean_distance = mean_distance / 100;
+
+  // turn red or green LED on
+  if (mean_distance < 15) {
+      block_type = 0; //low density
+      digitalWrite(greenLedPin, HIGH);
+      digitalWrite(redLedPin, LOW);
+  } 
+  else {
+      block_type =1; //high density
+      digitalWrite(greenLedPin, LOW);
+      digitalWrite(redLedPin, HIGH);
+  }
+  return block_type;
+}
+
 volatile int startFlag = 1;
 volatile int stop_follow = false;
 void loop() {
@@ -59,6 +110,8 @@ void loop() {
   static int start_count = 0;
   int line_detect = 0;
   int block_type;
+  bool hasBlock;
+  int desiredJunction;
   //initialise sensors for readable code and read pins
   int right_lineSensor = digitalRead(lineSensorpin_1); //8
   int v_right_lineSensor = digitalRead(lineSensorpin_2); //9
@@ -99,7 +152,8 @@ void loop() {
     junction_count++;    
   }
 
-  junction(junction_count);
+  junction(junction_count, hasBlock, block_type, desiredJunction);
+  
 
   while (stop_follow != true){
     line_follow(left_lineSensor, right_lineSensor, v_left_lineSensor, v_right_lineSensor);
@@ -187,51 +241,66 @@ int getError(int a, int b, int c, int d){
   return error;
 }
 
-void junction(int count){
-  
-}
-
-int ultrasonic_read() {
-  long duration;
-  int distance[100];
-  int block_type;
-  for (int i = 0; i < 100; i++) {
-    digitalWrite(trigPin, LOW);
-    delayMicroseconds(2);
-    digitalWrite(trigPin, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(trigPin, LOW);
-
-    //calculate duration of pulse and distance to object
-    duration = pulseIn(echoPin, HIGH);
-
-    //check if input is valid, if not then loop again
-    int dis = duration * 0.034/2;
-    if (dis < 60) {
-      distance[i] = dis;
-    } 
-    else {
-      i--;
+void junction(int count, bool hasBlock, int blockType, int desiredJunction){
+  if (hasBlock == false){
+    if (count == 2 && desiredJunction == 2){
+      //turn left, pickup function
+      // find coordinates of blue block 1 in x,y
+      //if no blue in 2's xy co-ords continue forward
     }
-  }
+    else if (count == 3 && desiredJunction == 3){
+      //turn right, pickup function
+      // find coordinates of blue block 2 in x,y
+      //if no blue in 2's xy co-ords continue forward
+    }
+    else if (count == 4 && desiredJunction == 4)
+    { //turn left, pickup function
+      // find coordinates of blue block 3 in x,y
+      //if no blue in 2's xy co-ords continue forward}
 
-  //calculate mean distance
-  int mean_distance = 0;
-  for (int i = 0; i < 100; i++) {
-    mean_distance += distance[i];
-  }
-  mean_distance = mean_distance / 100;
 
-  // turn red or green LED on
-  if (mean_distance < 15) {
-      block_type = 0; //low density
-      digitalWrite(greenLedPin, HIGH);
-      digitalWrite(redLedPin, LOW);
-  } 
-  else {
-      block_type =1; //high density
-      digitalWrite(greenLedPin, LOW);
-      digitalWrite(redLedPin, HIGH);
+
   }
-  return block_type;
-}
+  else if(hasBlock == true){
+    //deposit block
+    if (count == 1){
+      if (blockType == 0){
+      //low density green
+      //continue forward
+      }}
+      else if(blockType == 1){
+      //high density red
+      //turn right
+    }
+    
+    else if (count == 5){}
+      if (blockType == 0){
+      //low density green
+      //turn right
+      }else if(blockType == 1){
+      //high density red
+      //continue forward
+    }
+  //else turn 
+
+  }
+  
+}}
+
+void pickup(){  
+  //moves grabber down 
+  for (pos = 90; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees
+    myservo.write(pos);              // tell servo to go to position in variable 'pos'
+    delay(250);                       // waits 15 ms for the servo to reach the position
+}}
+
+
+void dropoff(char colour){
+  //moves grabber up when within range
+  for (pos = 0; pos <= 90; pos += 1) { // goes from 0 degrees to 180 degrees
+    // in steps of 1 degree
+    myservo.write(pos);              // tell servo to go to position in variable 'pos'
+    delay(250);   
+
+}}
+
