@@ -13,6 +13,11 @@ int lineSensorpin_2 = 9;
 int lineSensorpin_3 = 10;
 int lineSensorpin_4 = 11;
 
+int echoPin = 2;
+int trigPin = 3;
+int greenLedPin = 4;
+int redLedPin = 5;
+
 
 void setup() {
 
@@ -24,6 +29,10 @@ void setup() {
   pinMode(lineSensorpin_2, INPUT);
   pinMode(lineSensorpin_3, INPUT); 
   pinMode(lineSensorpin_4, INPUT);
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  pinMode(redLedPin, OUTPUT);
+  pinMode(greenLedPin, OUTPUT);
 
 //check if motorshield is connected
   if (!AFMS.begin()) {         // create with the default frequency 1.6KHz
@@ -49,7 +58,7 @@ void loop() {
   static int junction_count = 0; 
   static int start_count = 0;
   int line_detect = 0;
-
+  int block_type;
   //initialise sensors for readable code and read pins
   int right_lineSensor = digitalRead(lineSensorpin_1); //8
   int v_right_lineSensor = digitalRead(lineSensorpin_2); //9
@@ -78,25 +87,27 @@ void loop() {
 
   //line follow algorithm, while checking for junctions#
 
-  if(right_lineSensor ==1  && v_right_lineSensor ==1){
+  if(right_lineSensor ==1  && v_right_lineSensor ==1){ //right junction
     junction_count++;
   }
 
-  else if(left_lineSensor ==1  && v_left_lineSensor ==1){
+  else if(left_lineSensor ==1  && v_left_lineSensor ==1){ //left junction
     junction_count++;
   }
 
-  else if(left_lineSensor ==1 && right_lineSensor ==1 && v_left_lineSensor ==1 && v_right_lineSensor ==1){
+  else if(left_lineSensor ==1 && right_lineSensor ==1 && v_left_lineSensor ==1 && v_right_lineSensor ==1){ //middle
     junction_count++;    
   }
-  
+
+  junction(junction_count);
+
   while (stop_follow != true){
-    junction(junction_count);
     line_follow(left_lineSensor, right_lineSensor, v_left_lineSensor, v_right_lineSensor);
   }
   
+  // if near block
   //run ultrasound sensor, LED to show type, save type
-  ultrasonic_read()
+  block_type = ultrasonic_read();
   //run servo motor to capture block
 
   //go back to main line and follow line again 
@@ -106,7 +117,6 @@ void loop() {
   //from block type, go to correct bin and deposit
 
   //reverse to main line, check if more blocks (CV), if blocks -> collect, if not -> go back home
-
   }
 }
 
@@ -171,6 +181,9 @@ int getError(int a, int b, int c, int d){
   else if(a==0 && b==0 && c==0 && d==1){
     error = -4;
   }
+  else{
+    error = 0;
+  }
   return error;
 }
 
@@ -178,10 +191,10 @@ void junction(int count){
   
 }
 
-void ultrasonic_read() {
+int ultrasonic_read() {
   long duration;
   int distance[100];
-
+  int block_type;
   for (int i = 0; i < 100; i++) {
     digitalWrite(trigPin, LOW);
     delayMicroseconds(2);
@@ -196,7 +209,8 @@ void ultrasonic_read() {
     int dis = duration * 0.034/2;
     if (dis < 60) {
       distance[i] = dis;
-    } else {
+    } 
+    else {
       i--;
     }
   }
@@ -210,10 +224,14 @@ void ultrasonic_read() {
 
   // turn red or green LED on
   if (mean_distance < 15) {
+      block_type = 0; //low density
       digitalWrite(greenLedPin, HIGH);
       digitalWrite(redLedPin, LOW);
-  } else {
+  } 
+  else {
+      block_type =1; //high density
       digitalWrite(greenLedPin, LOW);
       digitalWrite(redLedPin, HIGH);
   }
+  return block_type;
 }
