@@ -13,10 +13,13 @@ int lineSensorpin_2 = 9;
 int lineSensorpin_3 = 11;
 int lineSensorpin_4 = 12;
 
+int buttonState = 0;
+int buttonPin = 6;
 int echoPin = 2;
 int trigPin = 3;
 int greenLedPin = 4;
 int redLedPin = 5;
+int amberLedPin = 7;
 
 
 void setup() {
@@ -33,6 +36,15 @@ void setup() {
   pinMode(echoPin, INPUT);
   pinMode(redLedPin, OUTPUT);
   pinMode(greenLedPin, OUTPUT);
+  pinMode(buttonPin, INPUT);
+  pinMode(amberLedPin, OUTPUT);
+
+
+  while (buttonState == 0) {
+    buttonState = digitalRead(buttonPin);
+    //Serial.println(buttonState);
+  }
+
 
 //check if motorshield is connected
   if (!AFMS.begin()) {         // create with the default frequency 1.6KHz
@@ -51,7 +63,7 @@ void setup() {
   right->run(RELEASE);
 }
 
-volatile int startFlag = 1;
+ int startFlag = 1;
 //volatile int stop_follow = false;
 void loop() {
   //initialise static counters, for start sequence and junction count
@@ -69,7 +81,7 @@ void loop() {
   //get to main line and rotate 90 deg clockwise
   if (startFlag == 0){
     if (left_lineSensor ==1 && right_lineSensor ==1 && v_left_lineSensor ==1 && v_right_lineSensor ==1){ // 1111
-    delay(100);
+    delay(200);
       start_count++;
       Serial.println(start_count);
     }
@@ -83,16 +95,14 @@ void loop() {
   // Query PC if blocks are seen from camera, and which junction they are at
 
   //line follow algorithm, while checking for junctions#
-/*
 
   //junction(junction_count);
-  */
 
-  if(v_right_lineSensor ==1 || v_left_lineSensor ==1){ //right junction
-  delay(300);
-    junction_count++;
+  if((v_right_lineSensor ==1 && right_lineSensor ==1)||(v_left_lineSensor ==1 && left_lineSensor ==1)){ //right junction
+  delay(250);
+  junction_count++;
   }
-    line_follow(left_lineSensor, right_lineSensor, v_left_lineSensor, v_right_lineSensor);
+  line_follow(left_lineSensor, right_lineSensor, v_left_lineSensor, v_right_lineSensor);
     Serial.println(junction_count);
   
   // if near block
@@ -111,17 +121,19 @@ void loop() {
 }
 
 void line_follow(int left_lineSensor, int right_lineSensor, int v_left_lineSensor, int v_right_lineSensor){
-  int kp = 95;
+  int kp = 105;
+  digitalWrite(amberLedPin, HIGH);
+  digitalWrite(amberLedPin, LOW);
   int error = getError(left_lineSensor, right_lineSensor, v_left_lineSensor, v_right_lineSensor);
   //Serial.println(error);
   static int left_speed;
   static int right_speed;
 
-  left_speed = 225 - kp*error;
+  left_speed = 215 - kp*error;
   right_speed = 225 + kp*error;
 
   if(left_speed >255){
-    left_speed = 255;
+    left_speed = 245;
   }
   if(right_speed >255){
     right_speed = 255;
@@ -130,27 +142,27 @@ void line_follow(int left_lineSensor, int right_lineSensor, int v_left_lineSenso
   left->setSpeed(left_speed);
   right->setSpeed(right_speed);
   
-  left->run(FORWARD);
+  left->run(BACKWARD);
   right->run(BACKWARD);
 }
 
 void start_to_line(int count, int left_lineSensor){
   //go forward until 1111
   if(count!=2){
-Serial.println("GO FORWARD");
-  left->run(FORWARD);
+    digitalWrite(amberLedPin, HIGH);
+      digitalWrite(amberLedPin, LOW);
+  left->run(BACKWARD);
   right->run(BACKWARD);
   }
   else if(count ==2){ //once main line reached
-    if(left_lineSensor !=1){
-       left->run(FORWARD); //rotate until line detected
-      right ->run(BACKWARD);
-    }
-    else{
-    left ->fullOff();
-    right ->fullOff();
+  left->run(BACKWARD);
+  right->run(BACKWARD);
+  delay(200);
+      left->run(BACKWARD); //rotate until line detected
+      right ->run(FORWARD);
+      delay(1000);
+      Serial.println("line follow now");
      startFlag = 1;
-    }
   }
 }
 
@@ -166,10 +178,10 @@ int getError(int a, int b, int c, int d){
     error = -2;
   }
   else if(a==0 && b==0 && c==1 && d==0){
-    error = 4;
+    error = 3;
   }
   else if(a==0 && b==1 && c==0 && d==1){
-    error = -4;
+    error = -3;
   }
   else{
     error = 0;
@@ -178,7 +190,9 @@ int getError(int a, int b, int c, int d){
 }
 
 void junction(int count){
-  
+  if(count==1){
+
+  }
 }
 
 int ultrasonic_read() {
