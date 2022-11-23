@@ -1,4 +1,6 @@
 #include <Adafruit_MotorShield.h>
+#include <Servo.h>
+
 
 // Create the motor shield object with the default I2C address
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
@@ -21,6 +23,15 @@ int greenLedPin = 4;
 int redLedPin = 5;
 int amberLedPin = 7;
 
+bool ledOn = false;
+const int blinkDuration = 500;
+unsigned long timeNow = 0;
+unsigned long prevTime = 0;
+
+int loop_num = 0;
+
+Servo myservo;
+int pos = 0;
 
 void setup() {
 
@@ -39,7 +50,7 @@ void setup() {
   pinMode(buttonPin, INPUT);
   pinMode(amberLedPin, OUTPUT);
 
-
+  myservo.attach(10);
   while (buttonState == 0) {
     buttonState = digitalRead(buttonPin);
     //Serial.println(buttonState);
@@ -63,7 +74,7 @@ void setup() {
   right->run(RELEASE);
 }
 
- int startFlag = 1;
+ int startFlag = 0;
 //volatile int stop_follow = false;
 void loop() {
   //initialise static counters, for start sequence and junction count
@@ -86,6 +97,7 @@ void loop() {
       Serial.println(start_count);
     }
     start_to_line(start_count, left_lineSensor);
+    flashLed();
   }
   
   if(startFlag ==1){
@@ -94,14 +106,18 @@ void loop() {
 
   // Query PC if blocks are seen from camera, and which junction they are at
 
-  //line follow algorithm, while checking for junctions#
-
-  //junction(junction_count);
+  junction(junction_count);
 
   if((v_right_lineSensor ==1 && right_lineSensor ==1)||(v_left_lineSensor ==1 && left_lineSensor ==1)){ //right junction
   delay(250);
   junction_count++;
   }
+
+  if(junction_count==8){
+    junction_count =1;
+  }
+
+  flashLed();
   line_follow(left_lineSensor, right_lineSensor, v_left_lineSensor, v_right_lineSensor);
     Serial.println(junction_count);
   
@@ -190,8 +206,94 @@ int getError(int a, int b, int c, int d){
 }
 
 void junction(int count){
-  if(count==1){
+  int desired_count;
+  if(loop_num ==0){
+    if(count == 4){
+      left->run(BACKWARD); // go forward a bit
+      right ->run(BACKWARD);
+      delay(1000);
+      left->setSpeed(0);
+      right->setSpeed(0);
+      int type = ultrasonic_read();
 
+      collect_block();
+
+      if(type==0){
+        desired_count = 8;
+      }
+      if(type ==1){
+        desired_count =2;
+      }
+
+      if(count == desired_count){
+        drop_off();
+      }
+      loop_num++;
+    }
+  }
+  if(loop_num==1){
+    if(count==4){
+      left->run(FORWARD); //rotate until line detected
+  right ->run(BACKWARD);
+  delay(2500);
+  left->setSpeed(0);
+      right->setSpeed(0);
+      int type = ultrasonic_read();
+
+      collect_block();
+      left->run(BACKWARD); //rotate until line detected
+  right ->run(FORWARD);
+  delay(2500);
+
+     if(type==0){
+        desired_count = 8;
+      }
+      if(type ==1){
+        desired_count =2;
+      }
+
+      if(count == desired_count){
+        drop_off();
+      }
+      loop_num++;
+    }
+  }
+  if(loop_num==2){
+    if(count==7){
+      left->run(FORWARD); //rotate until line detected
+  right ->run(BACKWARD);
+  delay(2500);
+  left->setSpeed(0);
+      right->setSpeed(0);
+      int type = ultrasonic_read();
+
+      collect_block();
+
+      left->run(BACKWARD); //rotate until line detected
+  right ->run(FORWARD);
+  delay(2500);
+
+      if(type==0){
+        desired_count = 8;
+      }
+      if(type ==1){
+        desired_count =2;
+      }
+
+      if(count == desired_count){
+        drop_off();
+      }
+      loop_num++;
+    }
+  }
+  if(loop_num==3){
+    if(count ==1){
+      left->run(BACKWARD); //rotate until line detected
+  right ->run(FORWARD);
+  delay(2500);
+  left->setSpeed(0);
+      right->setSpeed(0);
+    }
   }
 }
 
@@ -238,4 +340,41 @@ int ultrasonic_read() {
       digitalWrite(redLedPin, HIGH);
   }
   return block_type;
+}
+
+void flashLed() {
+  timeNow = millis();
+
+  if ( (timeNow - prevTime) >= blinkDuration) {
+    prevTime += blinkDuration;
+    if (ledOn == false) {
+      digitalWrite(amberLedPin, HIGH);
+      ledOn = true;
+    } else {
+      digitalWrite(amberLedPin, LOW);
+      ledOn = false;
+    }
+  }
+}
+
+void collect_block(){
+   for (pos = 180; pos >= 105; pos -= 1) { 
+    myservo.write(pos);              
+    delay(30);                       
+  }  
+}
+
+void drop_off(){
+  left->run(BACKWARD); //rotate until line detected
+  right ->run(FORWARD);
+  delay(2500);
+
+  for (pos = 105; pos <= 180; pos += 1) { // goes from 180 degrees to 0 degrees
+    myservo.write(pos);              // tell servo to go to position in variable 'pos'
+    delay(15);                       // waits 15 ms for the servo to reach the position
+  }
+
+left->run(FORWARD); //rotate until line detected
+  right ->run(BACKWARD);
+  delay(2500);
 }
