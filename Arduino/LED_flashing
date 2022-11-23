@@ -1,0 +1,29 @@
+bool ledOn = false;
+const int blinkDuration = 500;
+unsigned long timeNow = 0;
+unsigned long prevTime = 0;
+pinMode ledPin = 6;
+
+void setup() {
+  pinMode(ledPin, OUTPUT);
+}
+
+void loop() {
+  flashLed();
+
+}
+
+void flashLed() {
+  timeNow = millis();
+
+  if ( (timeNow - prevTime) >= blinkDuration) {
+    prevTime += blinkDuration;
+    if (ledOn == false) {
+      digitalWrite(ledPin, HIGH);
+      ledOn = true;
+    } else {
+      digitalWrite(ledPin, LOW);
+      ledOn = false;
+    }
+  }
+}
