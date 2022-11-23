@@ -16,17 +16,18 @@ int lineSensorpin_3 = 11;
 int lineSensorpin_4 = 12;
 
 int buttonState = 0;
-int buttonPin = 6;
+int buttonPin = 4;
 int echoPin = 2;
 int trigPin = 3;
-int greenLedPin = 4;
-int redLedPin = 5;
-int amberLedPin = 7;
+int greenLedPin = 7;
+int redLedPin = 6;
+int amberLedPin = 5;
 
 bool ledOn = false;
 const int blinkDuration = 500;
 unsigned long timeNow = 0;
 unsigned long prevTime = 0;
+unsigned long start_time =0;
 
 int loop_num = 0;
 
@@ -51,6 +52,7 @@ void setup() {
   pinMode(amberLedPin, OUTPUT);
 
   myservo.attach(10);
+      myservo.write(180);              
   while (buttonState == 0) {
     buttonState = digitalRead(buttonPin);
     //Serial.println(buttonState);
@@ -77,6 +79,7 @@ void setup() {
  int startFlag = 0;
 //volatile int stop_follow = false;
 void loop() {
+  flashLed();
   //initialise static counters, for start sequence and junction count
   static int junction_count = 0; 
   static int start_count = 0;
@@ -97,7 +100,6 @@ void loop() {
       Serial.println(start_count);
     }
     start_to_line(start_count, left_lineSensor);
-    flashLed();
   }
   
   if(startFlag ==1){
@@ -106,7 +108,7 @@ void loop() {
 
   // Query PC if blocks are seen from camera, and which junction they are at
 
-  junction(junction_count);
+  junction(junction_count, left_lineSensor,  right_lineSensor,  v_left_lineSensor,  v_right_lineSensor);
 
   if((v_right_lineSensor ==1 && right_lineSensor ==1)||(v_left_lineSensor ==1 && left_lineSensor ==1)){ //right junction
   delay(250);
@@ -117,22 +119,9 @@ void loop() {
     junction_count =1;
   }
 
-  flashLed();
   line_follow(left_lineSensor, right_lineSensor, v_left_lineSensor, v_right_lineSensor);
     Serial.println(junction_count);
   
-  // if near block
-  //run ultrasound sensor, LED to show type, save type
-  //block_type = ultrasonic_read();
-  //run servo motor to capture block
-
-  //go back to main line and follow line again 
-
-  //when no line detected, keep going straight till line detected (tunnel)
-
-  //from block type, go to correct bin and deposit
-
-  //reverse to main line, check if more blocks (CV), if blocks -> collect, if not -> go back home
   }
 }
 
@@ -205,13 +194,14 @@ int getError(int a, int b, int c, int d){
   return error;
 }
 
-void junction(int count){
+void junction(int count, int left_lineSensor, int right_lineSensor, int v_left_lineSensor, int v_right_lineSensor){
   int desired_count;
   if(loop_num ==0){
     if(count == 4){
-      left->run(BACKWARD); // go forward a bit
-      right ->run(BACKWARD);
-      delay(1000);
+      start_time = millis();
+      while((millis()-start_time)<3500){
+         line_follow( left_lineSensor,  right_lineSensor,  v_left_lineSensor,  v_right_lineSensor);   
+      }
       left->setSpeed(0);
       right->setSpeed(0);
       int type = ultrasonic_read();
@@ -233,17 +223,22 @@ void junction(int count){
   }
   if(loop_num==1){
     if(count==4){
-      left->run(FORWARD); //rotate until line detected
+      
+  start_time = millis();
+      while((millis()-start_time)<2000){
+      left->run(FORWARD); 
   right ->run(BACKWARD);
-  delay(2500);
+  }
   left->setSpeed(0);
       right->setSpeed(0);
       int type = ultrasonic_read();
 
       collect_block();
-      left->run(BACKWARD); //rotate until line detected
+  start_time = millis();
+      while((millis()-start_time)<2000){
+      left->run(BACKWARD); 
   right ->run(FORWARD);
-  delay(2500);
+  }
 
      if(type==0){
         desired_count = 8;
@@ -260,18 +255,22 @@ void junction(int count){
   }
   if(loop_num==2){
     if(count==7){
-      left->run(FORWARD); //rotate until line detected
+      start_time = millis();
+      while((millis()-start_time)<2000){
+      left->run(FORWARD); 
   right ->run(BACKWARD);
-  delay(2500);
+  }
   left->setSpeed(0);
       right->setSpeed(0);
       int type = ultrasonic_read();
 
       collect_block();
 
-      left->run(BACKWARD); //rotate until line detected
+     start_time = millis();
+      while((millis()-start_time)<2000){
+      left->run(BACKWARD); 
   right ->run(FORWARD);
-  delay(2500);
+  }
 
       if(type==0){
         desired_count = 8;
@@ -288,12 +287,14 @@ void junction(int count){
   }
   if(loop_num==3){
     if(count ==1){
+      start_time = millis();
+      while((millis()-start_time)<2000){
       left->run(BACKWARD); //rotate until line detected
   right ->run(FORWARD);
-  delay(2500);
-  left->setSpeed(0);
-      right->setSpeed(0);
     }
+     left->setSpeed(0);
+      right->setSpeed(0);
+  }
   }
 }
 
@@ -365,16 +366,19 @@ void collect_block(){
 }
 
 void drop_off(){
+  start_time = millis();
+  while((millis()-start_time)<2000){
   left->run(BACKWARD); //rotate until line detected
   right ->run(FORWARD);
-  delay(2500);
+  }
 
   for (pos = 105; pos <= 180; pos += 1) { // goes from 180 degrees to 0 degrees
     myservo.write(pos);              // tell servo to go to position in variable 'pos'
     delay(15);                       // waits 15 ms for the servo to reach the position
   }
-
+  start_time = millis();
+  while((millis()-start_time)<2000){
 left->run(FORWARD); //rotate until line detected
   right ->run(BACKWARD);
-  delay(2500);
+  }
 }
