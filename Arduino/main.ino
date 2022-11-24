@@ -28,9 +28,13 @@ const int blinkDuration = 500;
 unsigned long timeNow = 0;
 unsigned long prevTime = 0;
 unsigned long start_time =0;
+unsigned long end_time =0;
+
 
 int loop_num = 0;
-
+int data;
+int block_got;
+int type;
 Servo myservo;
 int pos = 0;
 
@@ -52,7 +56,7 @@ void setup() {
   pinMode(amberLedPin, OUTPUT);
 
   myservo.attach(10);
-      myservo.write(180);              
+      myservo.write(170);              
   while (buttonState == 0) {
     buttonState = digitalRead(buttonPin);
     //Serial.println(buttonState);
@@ -115,11 +119,12 @@ void loop() {
   junction_count++;
   }
 
-  if(junction_count==8){
+  if(junction_count==9){
     junction_count =1;
   }
 
   line_follow(left_lineSensor, right_lineSensor, v_left_lineSensor, v_right_lineSensor);
+    Serial.println(loop_num);
     Serial.println(junction_count);
   
   }
@@ -127,8 +132,6 @@ void loop() {
 
 void line_follow(int left_lineSensor, int right_lineSensor, int v_left_lineSensor, int v_right_lineSensor){
   int kp = 105;
-  digitalWrite(amberLedPin, HIGH);
-  digitalWrite(amberLedPin, LOW);
   int error = getError(left_lineSensor, right_lineSensor, v_left_lineSensor, v_right_lineSensor);
   //Serial.println(error);
   static int left_speed;
@@ -198,16 +201,26 @@ void junction(int count, int left_lineSensor, int right_lineSensor, int v_left_l
   int desired_count;
   if(loop_num ==0){
     if(count == 4){
-      start_time = millis();
-      while((millis()-start_time)<3500){
+      if(block_got==0){ 
+start_time = millis();
+end_time = start_time;      
+while((end_time-start_time)<3200){
+        int right_lineSensor = digitalRead(lineSensorpin_1); //8
+      int v_right_lineSensor = digitalRead(lineSensorpin_2); //9
+  int left_lineSensor = digitalRead(lineSensorpin_3); //11
+  int v_left_lineSensor = digitalRead(lineSensorpin_4); //12
+  delay(10);
          line_follow( left_lineSensor,  right_lineSensor,  v_left_lineSensor,  v_right_lineSensor);   
+         end_time = millis();
       }
       left->setSpeed(0);
       right->setSpeed(0);
-      int type = ultrasonic_read();
+      type = ultrasonic_read();
 
       collect_block();
-
+      block_got=1;
+      }
+else{
       if(type==0){
         desired_count = 8;
       }
@@ -217,29 +230,30 @@ void junction(int count, int left_lineSensor, int right_lineSensor, int v_left_l
 
       if(count == desired_count){
         drop_off();
+        loop_num++;
+        block_got=0;
       }
-      loop_num++;
+    }
     }
   }
   if(loop_num==1){
     if(count==4){
-      
+      if(block_got==0){
   start_time = millis();
-      while((millis()-start_time)<2000){
+end_time = start_time;      
+while((end_time-start_time)<2000){
       left->run(FORWARD); 
   right ->run(BACKWARD);
+  end_time = millis();
   }
   left->setSpeed(0);
       right->setSpeed(0);
-      int type = ultrasonic_read();
+       type = ultrasonic_read();
 
       collect_block();
-  start_time = millis();
-      while((millis()-start_time)<2000){
-      left->run(BACKWARD); 
-  right ->run(FORWARD);
-  }
-
+      block_got=1;      
+      }
+    else{
      if(type==0){
         desired_count = 8;
       }
@@ -249,29 +263,30 @@ void junction(int count, int left_lineSensor, int right_lineSensor, int v_left_l
 
       if(count == desired_count){
         drop_off();
+        loop_num++;
+        block_got = 0;
       }
-      loop_num++;
+    }
     }
   }
   if(loop_num==2){
     if(count==7){
+      if(block_got==0){
       start_time = millis();
-      while((millis()-start_time)<2000){
+end_time = start_time;      
+while((end_time-start_time)<2000){
       left->run(FORWARD); 
   right ->run(BACKWARD);
+  end_time = millis();
   }
   left->setSpeed(0);
       right->setSpeed(0);
-      int type = ultrasonic_read();
+       type = ultrasonic_read();
 
       collect_block();
-
-     start_time = millis();
-      while((millis()-start_time)<2000){
-      left->run(BACKWARD); 
-  right ->run(FORWARD);
-  }
-
+      block_got =1;
+      }
+else{
       if(type==0){
         desired_count = 8;
       }
@@ -281,66 +296,45 @@ void junction(int count, int left_lineSensor, int right_lineSensor, int v_left_l
 
       if(count == desired_count){
         drop_off();
+        loop_num++;
+        block_got =0;
       }
-      loop_num++;
+}
     }
   }
   if(loop_num==3){
     if(count ==1){
       start_time = millis();
-      while((millis()-start_time)<2000){
-      left->run(BACKWARD); //rotate until line detected
+end_time = start_time;      
+while((end_time-start_time)<2000){
+      left->run(BACKWARD); 
   right ->run(FORWARD);
+  end_time = millis();
+    }
+     start_time = millis();
+end_time = start_time;      
+while((end_time-start_time)<1000){
+      left->run(BACKWARD); 
+  right ->run(BACKWARD);
+  end_time = millis();
     }
      left->setSpeed(0);
       right->setSpeed(0);
   }
   }
 }
-
 int ultrasonic_read() {
-  long duration;
-  int distance[100];
-  int block_type;
-  for (int i = 0; i < 100; i++) {
-    digitalWrite(trigPin, LOW);
-    delayMicroseconds(2);
-    digitalWrite(trigPin, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(trigPin, LOW);
-
-    //calculate duration of pulse and distance to object
-    duration = pulseIn(echoPin, HIGH);
-
-    //check if input is valid, if not then loop again
-    int dis = duration * 0.034/2;
-    if (dis < 60) {
-      distance[i] = dis;
-    } 
-    else {
-      i--;
-    }
+  data = random(0, 2); // arduino random number in range (0,2)
+  if (data==1){
+digitalWrite(greenLedPin, HIGH)    ;
   }
-
-  //calculate mean distance
-  int mean_distance = 0;
-  for (int i = 0; i < 100; i++) {
-    mean_distance += distance[i];
+  else{
+digitalWrite(redLedPin, HIGH)    ;
   }
-  mean_distance = mean_distance / 100;
-
-  // turn red or green LED on
-  if (mean_distance < 15) {
-      block_type = 0; //low density
-      digitalWrite(greenLedPin, HIGH);
-      digitalWrite(redLedPin, LOW);
-  } 
-  else {
-      block_type =1; //high density
-      digitalWrite(greenLedPin, LOW);
-      digitalWrite(redLedPin, HIGH);
-  }
-  return block_type;
+  delay(1000);
+digitalWrite(greenLedPin, LOW) ;
+digitalWrite(redLedPin, LOW) ;
+  return data;
 }
 
 void flashLed() {
@@ -359,26 +353,33 @@ void flashLed() {
 }
 
 void collect_block(){
-   for (pos = 180; pos >= 105; pos -= 1) { 
+   for (pos = 170; pos >= 105; pos -= 1) { 
     myservo.write(pos);              
     delay(30);                       
   }  
 }
 
 void drop_off(){
-  start_time = millis();
-  while((millis()-start_time)<2000){
+  left->setSpeed(255);
+  right->setSpeed(255);
+    start_time = millis();
+end_time = start_time;      
+while((end_time-start_time)<3000){
   left->run(BACKWARD); //rotate until line detected
   right ->run(FORWARD);
+  end_time=millis();
   }
 
-  for (pos = 105; pos <= 180; pos += 1) { // goes from 180 degrees to 0 degrees
+  for (pos = 105; pos <= 170; pos += 1) { // goes from 180 degrees to 0 degrees
     myservo.write(pos);              // tell servo to go to position in variable 'pos'
     delay(15);                       // waits 15 ms for the servo to reach the position
   }
-  start_time = millis();
-  while((millis()-start_time)<2000){
+  
+   start_time = millis();
+end_time = start_time;      
+while((end_time-start_time)<3000){
 left->run(FORWARD); //rotate until line detected
   right ->run(BACKWARD);
+  end_time =millis();
   }
 }
