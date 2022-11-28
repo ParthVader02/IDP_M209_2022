@@ -30,16 +30,14 @@ unsigned long prevTime = 0;
 unsigned long start_time =0;
 unsigned long end_time =0;
 
-
 int loop_num = 0;
 int data;
-int block_got;
+int block_got=0;
 int type;
 Servo myservo;
 int pos = 0;
 
 void setup() {
-
  //run startup sequence, flash some LEDs to tell us its alive
 
   Serial.begin(9600);           // set up Serial library at 9600 bps
@@ -79,7 +77,7 @@ void setup() {
   right->setSpeed(225);
   right->run(RELEASE);
 }
-
+String line_data = "";
  int startFlag = 0;
 //volatile int stop_follow = false;
 void loop() {
@@ -115,18 +113,22 @@ void loop() {
   junction(junction_count, left_lineSensor,  right_lineSensor,  v_left_lineSensor,  v_right_lineSensor);
 
   if((v_right_lineSensor ==1 && right_lineSensor ==1)||(v_left_lineSensor ==1 && left_lineSensor ==1)){ //right junction
-  delay(250);
+line_data.concat("1");
+if(line_data.length()>13){
   junction_count++;
+  line_data = "";
+}
   }
-
-  if(junction_count==9){
+ 
+  if(junction_count==6){
     junction_count =1;
   }
-
-  line_follow(left_lineSensor, right_lineSensor, v_left_lineSensor, v_right_lineSensor);
-    Serial.println(loop_num);
-    Serial.println(junction_count);
   
+  line_follow(left_lineSensor, right_lineSensor, v_left_lineSensor, v_right_lineSensor);
+    //Serial.print("loop num:");
+   //Serial.println(loop_num);
+     Serial.print("junction :");
+    Serial.println(junction_count);
   }
 }
 
@@ -186,10 +188,10 @@ int getError(int a, int b, int c, int d){
     error = -2;
   }
   else if(a==0 && b==0 && c==1 && d==0){
-    error = 3;
+    error = 5;
   }
   else if(a==0 && b==1 && c==0 && d==1){
-    error = -3;
+    error = -5;
   }
   else{
     error = 0;
@@ -197,14 +199,17 @@ int getError(int a, int b, int c, int d){
   return error;
 }
 
-void junction(int count, int left_lineSensor, int right_lineSensor, int v_left_lineSensor, int v_right_lineSensor){
+void junction(int count, int left_lineSensor, int right_lineSensor, int v_left_lineSensor, int v_right_lineSensor){ //decide what to do when junction detected
   int desired_count;
-  if(loop_num ==0){
-    if(count == 4){
-      if(block_got==0){ 
+  //Serial.print("block got:");
+  //Serial.println(block_got);
+  if(loop_num ==0){ //if first loop around arena
+  if(block_got==0){ 
+    if(count == 2){ //once junction 2 reached
+      //block not got yet
 start_time = millis();
 end_time = start_time;      
-while((end_time-start_time)<3200){
+while((end_time-start_time)<3200){ //go forward a bit by line following
         int right_lineSensor = digitalRead(lineSensorpin_1); //8
       int v_right_lineSensor = digitalRead(lineSensorpin_2); //9
   int left_lineSensor = digitalRead(lineSensorpin_3); //11
@@ -213,35 +218,40 @@ while((end_time-start_time)<3200){
          line_follow( left_lineSensor,  right_lineSensor,  v_left_lineSensor,  v_right_lineSensor);   
          end_time = millis();
       }
-      left->setSpeed(0);
+      left->setSpeed(0); //stop
       right->setSpeed(0);
       type = ultrasonic_read();
 
       collect_block();
       block_got=1;
       }
+  }
 else{
       if(type==0){
-        desired_count = 8;
+        desired_count = 5;
       }
       if(type ==1){
-        desired_count =2;
+        desired_count =1;
       }
-
       if(count == desired_count){
         drop_off();
         loop_num++;
         block_got=0;
       }
     }
-    }
   }
+
   if(loop_num==1){
-    if(count==4){
-      if(block_got==0){
+    if(block_got==0){
+    if(count==2){
   start_time = millis();
 end_time = start_time;      
-while((end_time-start_time)<2000){
+left->setSpeed(0);
+      right->setSpeed(0);
+      delay(500);
+      left->setSpeed(255);
+  right->setSpeed(255);
+while((end_time-start_time)<2000){ //TURN IN
       left->run(FORWARD); 
   right ->run(BACKWARD);
   end_time = millis();
@@ -251,14 +261,23 @@ while((end_time-start_time)<2000){
        type = ultrasonic_read();
 
       collect_block();
-      block_got=1;      
+      
+      left->setSpeed(255);
+  right->setSpeed(255);
+      while((end_time-start_time)<2000){ //turn out
+      left->run(BACKWARD); 
+  right ->run(FORWARD);
+  end_time = millis();   
       }
+ block_got=1;         
+      }
+    }
     else{
      if(type==0){
-        desired_count = 8;
+        desired_count = 5;
       }
       if(type ==1){
-        desired_count =2;
+        desired_count =1;
       }
 
       if(count == desired_count){
@@ -267,14 +286,19 @@ while((end_time-start_time)<2000){
         block_got = 0;
       }
     }
-    }
   }
+
   if(loop_num==2){
-    if(count==7){
-      if(block_got==0){
+    if(block_got==0){
+    if(count==4){
       start_time = millis();
 end_time = start_time;      
-while((end_time-start_time)<2000){
+left->setSpeed(0);
+      right->setSpeed(0);
+      delay(250);
+      left->setSpeed(255);
+  right->setSpeed(255);
+while((end_time-start_time)<2000){ //turn in
       left->run(FORWARD); 
   right ->run(BACKWARD);
   end_time = millis();
@@ -284,14 +308,23 @@ while((end_time-start_time)<2000){
        type = ultrasonic_read();
 
       collect_block();
-      block_got =1;
+      
+      left->setSpeed(255);
+  right->setSpeed(255);
+      while((end_time-start_time)<2000){ //turn out
+      left->run(BACKWARD); 
+  right ->run(FORWARD);
+  end_time = millis();
       }
+       block_got=1;   
+      }
+    }
 else{
       if(type==0){
-        desired_count = 8;
+        desired_count = 5;
       }
       if(type ==1){
-        desired_count =2;
+        desired_count =1;
       }
 
       if(count == desired_count){
@@ -301,11 +334,12 @@ else{
       }
 }
     }
-  }
   if(loop_num==3){
-    if(count ==1){
+    if(count ==0){
       start_time = millis();
-end_time = start_time;      
+end_time = start_time;  
+left->setSpeed(255);
+  right->setSpeed(255);    
 while((end_time-start_time)<2000){
       left->run(BACKWARD); 
   right ->run(FORWARD);
@@ -324,12 +358,13 @@ while((end_time-start_time)<1000){
   }
 }
 int ultrasonic_read() {
-  data = random(0, 2); // arduino random number in range (0,2)
+  data = random(0, 3); // arduino random number in range (0,2)
   if (data==1){
-digitalWrite(greenLedPin, HIGH)    ;
+digitalWrite(redLedPin, HIGH)    ;
   }
   else{
-digitalWrite(redLedPin, HIGH)    ;
+    digitalWrite(greenLedPin, HIGH)    ;
+
   }
   delay(1000);
 digitalWrite(greenLedPin, LOW) ;
@@ -339,7 +374,6 @@ digitalWrite(redLedPin, LOW) ;
 
 void flashLed() {
   timeNow = millis();
-
   if ( (timeNow - prevTime) >= blinkDuration) {
     prevTime += blinkDuration;
     if (ledOn == false) {
@@ -360,25 +394,32 @@ void collect_block(){
 }
 
 void drop_off(){
+  Serial.println("drop_off");
+  left->setSpeed(0); //stop
+      right->setSpeed(0); 
+      delay(1000);
   left->setSpeed(255);
   right->setSpeed(255);
     start_time = millis();
 end_time = start_time;      
-while((end_time-start_time)<3000){
+while((end_time-start_time)<1350){
   left->run(BACKWARD); //rotate until line detected
   right ->run(FORWARD);
   end_time=millis();
   }
-
+  left->setSpeed(0); //stop
+      right->setSpeed(0); 
   for (pos = 105; pos <= 170; pos += 1) { // goes from 180 degrees to 0 degrees
     myservo.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(15);                       // waits 15 ms for the servo to reach the position
+    delay(25);                       // waits 15 ms for the servo to reach the position
   }
   
    start_time = millis();
-end_time = start_time;      
-while((end_time-start_time)<3000){
-left->run(FORWARD); //rotate until line detected
+end_time = start_time;    
+left->setSpeed(255); //stop
+      right->setSpeed(255);  
+while((end_time-start_time)<1350){
+left->run(FORWARD); //turn out
   right ->run(BACKWARD);
   end_time =millis();
   }
