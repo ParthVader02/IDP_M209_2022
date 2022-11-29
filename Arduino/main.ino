@@ -121,7 +121,7 @@ if(line_data.length()>13){
   }
  
   if(junction_count==6){
-    junction_count =1;
+    junction_count =0;
   }
   
   line_follow(left_lineSensor, right_lineSensor, v_left_lineSensor, v_right_lineSensor);
@@ -251,7 +251,7 @@ left->setSpeed(0);
       delay(500);
       left->setSpeed(255);
   right->setSpeed(255);
-while((end_time-start_time)<2000){ //TURN IN
+while((end_time-start_time)<3500){ //TURN IN
       left->run(FORWARD); 
   right ->run(BACKWARD);
   end_time = millis();
@@ -264,7 +264,7 @@ while((end_time-start_time)<2000){ //TURN IN
       
       left->setSpeed(255);
   right->setSpeed(255);
-      while((end_time-start_time)<2000){ //turn out
+      while((end_time-start_time)<3500){ //turn out
       left->run(BACKWARD); 
   right ->run(FORWARD);
   end_time = millis();   
@@ -298,7 +298,7 @@ left->setSpeed(0);
       delay(250);
       left->setSpeed(255);
   right->setSpeed(255);
-while((end_time-start_time)<2000){ //turn in
+while((end_time-start_time)<3500){ //turn in
       left->run(FORWARD); 
   right ->run(BACKWARD);
   end_time = millis();
@@ -311,7 +311,7 @@ while((end_time-start_time)<2000){ //turn in
       
       left->setSpeed(255);
   right->setSpeed(255);
-      while((end_time-start_time)<2000){ //turn out
+      while((end_time-start_time)<3500){ //turn out
       left->run(BACKWARD); 
   right ->run(FORWARD);
   end_time = millis();
@@ -335,30 +335,33 @@ else{
 }
     }
   if(loop_num==3){
-    if(count ==0){
+    if(count==0){
       start_time = millis();
 end_time = start_time;  
 left->setSpeed(255);
   right->setSpeed(255);    
-while((end_time-start_time)<2000){
+while((end_time-start_time)<3500){
       left->run(BACKWARD); 
   right ->run(FORWARD);
   end_time = millis();
     }
      start_time = millis();
 end_time = start_time;      
-while((end_time-start_time)<1000){
+while((end_time-start_time)<1500){
       left->run(BACKWARD); 
   right ->run(BACKWARD);
   end_time = millis();
     }
      left->setSpeed(0);
       right->setSpeed(0);
+      exit(1);
   }
   }
 }
 int ultrasonic_read() {
+    delay(1000);
   data = random(0, 3); // arduino random number in range (0,2)
+
   if (data==1){
 digitalWrite(redLedPin, HIGH)    ;
   }
@@ -366,7 +369,7 @@ digitalWrite(redLedPin, HIGH)    ;
     digitalWrite(greenLedPin, HIGH)    ;
 
   }
-  delay(1000);
+  delay(5000);
 digitalWrite(greenLedPin, LOW) ;
 digitalWrite(redLedPin, LOW) ;
   return data;
