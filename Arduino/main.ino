@@ -358,16 +358,58 @@ while((end_time-start_time)<1500){
   }
   }
 }
+
 int ultrasonic_read() {
-    delay(1000);
-  data = random(0, 3); // arduino random number in range (0,2)
+	long duration;
+	int distance[100];
+
+	delay(2000);
+
+	for (int i = 0; i < 100; i++) {
+		digitalWrite(trigPin, LOW);
+    delayMicroseconds(2);
+    digitalWrite(trigPin, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin, LOW);
+
+    //calculate duration of pulse and distance to object
+    duration = pulseIn(echoPin, HIGH);
+
+    //check if input is valid, if not then loop again
+    int dis = duration * 0.034/2;
+    if (dis < 60) {
+      distance[i] = dis;
+    } else {
+      distance[i] = 0;
+    }
+	}
+
+  //calculate mean distance
+  int mean_distance = 0;
+	int mean_count = 0;
+  for (int i = 0; i < 100; i++) {
+		if (distance[i] != 0) {
+			mean_distance += distance[i];
+			mean_count += 1;
+		}
+  }
+
+	if (mean_count == 0) {
+		data = random(0, 3); // arduino random number in range (0,2)		
+	} else {
+		mean_distance = mean_distance / mean_count;
+		if (mean_distance < 15) {
+			data = 0;
+		} else {
+			data = 1;
+		}
+	}
 
   if (data==1){
-digitalWrite(redLedPin, HIGH)    ;
+		digitalWrite(redLedPin, HIGH)    ;
   }
   else{
     digitalWrite(greenLedPin, HIGH)    ;
-
   }
   delay(5000);
 digitalWrite(greenLedPin, LOW) ;
