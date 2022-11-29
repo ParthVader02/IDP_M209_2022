@@ -16,7 +16,7 @@ int lineSensorpin_3 = 11;
 int lineSensorpin_4 = 12;
 
 int buttonState = 0;
-int buttonPin = 4;
+int buttonPin = 13;
 int echoPin = 2;
 int trigPin = 3;
 int greenLedPin = 7;
@@ -59,7 +59,6 @@ void setup() {
     buttonState = digitalRead(buttonPin);
     //Serial.println(buttonState);
   }
-
 
 //check if motorshield is connected
   if (!AFMS.begin()) {         // create with the default frequency 1.6KHz
@@ -108,9 +107,13 @@ void loop() {
 
   //Serial.println("start_up done");
 
-  // Query PC if blocks are seen from camera, and which junction they are at
-
   junction(junction_count, left_lineSensor,  right_lineSensor,  v_left_lineSensor,  v_right_lineSensor);
+  /*
+  Serial.println("right_lineSensor");
+  Serial.println(right_lineSensor);
+  Serial.println(v_right_lineSensor);
+  Serial.println(left_lineSensor);
+  Serial.println(v_left_lineSensor);*/
 
   if((v_right_lineSensor ==1 && right_lineSensor ==1)||(v_left_lineSensor ==1 && left_lineSensor ==1)){ //right junction
 line_data.concat("1");
@@ -133,7 +136,7 @@ if(line_data.length()>13){
 }
 
 void line_follow(int left_lineSensor, int right_lineSensor, int v_left_lineSensor, int v_right_lineSensor){
-  int kp = 105;
+  int kp = 100;
   int error = getError(left_lineSensor, right_lineSensor, v_left_lineSensor, v_right_lineSensor);
   //Serial.println(error);
   static int left_speed;
@@ -165,12 +168,22 @@ void start_to_line(int count, int left_lineSensor){
   right->run(BACKWARD);
   }
   else if(count ==2){ //once main line reached
-  left->run(BACKWARD);
-  right->run(BACKWARD);
-  delay(200);
-      left->run(BACKWARD); //rotate until line detected
-      right ->run(FORWARD);
-      delay(1000);
+
+  start_time = millis();
+end_time = start_time;      
+while((end_time-start_time)<750){
+      left->run(BACKWARD); 
+  right ->run(BACKWARD);
+  end_time = millis();
+    }
+
+    start_time = millis();
+end_time = start_time;      
+while((end_time-start_time)<2000){
+      left->run(BACKWARD); 
+  right ->run(FORWARD);
+  end_time = millis();
+    }
       Serial.println("line follow now");
      startFlag = 1;
   }
@@ -188,10 +201,10 @@ int getError(int a, int b, int c, int d){
     error = -2;
   }
   else if(a==0 && b==0 && c==1 && d==0){
-    error = 5;
+    error = 4;
   }
   else if(a==0 && b==1 && c==0 && d==1){
-    error = -5;
+    error = -4;
   }
   else{
     error = 0;
@@ -223,6 +236,7 @@ while((end_time-start_time)<3200){ //go forward a bit by line following
       type = ultrasonic_read();
 
       collect_block();
+
       block_got=1;
       }
   }
@@ -240,7 +254,6 @@ else{
       }
     }
   }
-
   if(loop_num==1){
     if(block_got==0){
     if(count==2){
@@ -358,53 +371,8 @@ while((end_time-start_time)<1500){
   }
   }
 }
-
 int ultrasonic_read() {
-	long duration;
-	int distance[100];
-
-	delay(2000);
-
-	for (int i = 0; i < 100; i++) {
-		digitalWrite(trigPin, LOW);
-    delayMicroseconds(2);
-    digitalWrite(trigPin, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(trigPin, LOW);
-
-    //calculate duration of pulse and distance to object
-    duration = pulseIn(echoPin, HIGH);
-
-    //check if input is valid, if not then loop again
-    int dis = duration * 0.034/2;
-    if (dis < 60) {
-      distance[i] = dis;
-    } else {
-      distance[i] = 0;
-    }
-	}
-
-  //calculate mean distance
-  int mean_distance = 0;
-	int mean_count = 0;
-  for (int i = 0; i < 100; i++) {
-		if (distance[i] != 0) {
-			mean_distance += distance[i];
-			mean_count += 1;
-		}
-  }
-
-	if (mean_count == 0) {
 		data = random(0, 3); // arduino random number in range (0,2)		
-	} else {
-		mean_distance = mean_distance / mean_count;
-		if (mean_distance < 15) {
-			data = 0;
-		} else {
-			data = 1;
-		}
-	}
-
   if (data==1){
 		digitalWrite(redLedPin, HIGH)    ;
   }
@@ -416,6 +384,7 @@ digitalWrite(greenLedPin, LOW) ;
 digitalWrite(redLedPin, LOW) ;
   return data;
 }
+
 
 void flashLed() {
   timeNow = millis();
