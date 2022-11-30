@@ -1,3 +1,4 @@
+
 #include <Adafruit_MotorShield.h>
 #include <Servo.h>
 
@@ -29,6 +30,8 @@ unsigned long timeNow = 0;
 unsigned long prevTime = 0;
 unsigned long start_time =0;
 unsigned long end_time =0;
+unsigned long main_start_time =0;
+unsigned long main_end_time =0;
 
 int loop_num = 0;
 int data;
@@ -91,8 +94,6 @@ void loop() {
   int v_right_lineSensor = digitalRead(lineSensorpin_2); //9
   int left_lineSensor = digitalRead(lineSensorpin_3); //11
   int v_left_lineSensor = digitalRead(lineSensorpin_4); //12
-  delay(10);
-
   //get to main line and rotate 90 deg clockwise
   if (startFlag == 0){
     if (left_lineSensor ==1 && right_lineSensor ==1 && v_left_lineSensor ==1 && v_right_lineSensor ==1){ // 1111
@@ -106,25 +107,47 @@ void loop() {
   if(startFlag ==1){
 
   //Serial.println("start_up done");
-
-  junction(junction_count, left_lineSensor,  right_lineSensor,  v_left_lineSensor,  v_right_lineSensor);
   /*
+  for(int i=0;i<3;i++){
+  main_start_time = millis();
+main_end_time = start_time;      
+while((end_time-start_time)<5000){
+  end_time = millis();
+
+  if(end_time ==4000){
+    junction_count =1;
+  }
+   if(end_time ==4000){
+    junction_count =2;
+  } if(end_time ==4000){
+    junction_count =3;
+  } if(end_time ==4000){
+    junction_count =4;
+  } if(end_time ==4000){
+    junction_count =5;
+  } if(end_time ==4000){
+    junction_count =0;
+    loop_num++;
+  }
+*/
+junction(junction_count, left_lineSensor,  right_lineSensor,  v_left_lineSensor,  v_right_lineSensor);
+  
   Serial.println("right_lineSensor");
   Serial.println(right_lineSensor);
   Serial.println(v_right_lineSensor);
   Serial.println(left_lineSensor);
-  Serial.println(v_left_lineSensor);*/
+  Serial.println(v_left_lineSensor);
 
   if((v_right_lineSensor ==1 && right_lineSensor ==1)||(v_left_lineSensor ==1 && left_lineSensor ==1)){ //right junction
 line_data.concat("1");
-if(line_data.length()>13){
+if(line_data.length()>14){
   junction_count++;
   line_data = "";
 }
   }
  
   if(junction_count==6){
-    junction_count =0;
+    junction_count = 0;
   }
   
   line_follow(left_lineSensor, right_lineSensor, v_left_lineSensor, v_right_lineSensor);
@@ -133,10 +156,12 @@ if(line_data.length()>13){
      Serial.print("junction :");
     Serial.println(junction_count);
   }
+ // }
+ // }
 }
 
 void line_follow(int left_lineSensor, int right_lineSensor, int v_left_lineSensor, int v_right_lineSensor){
-  int kp = 100;
+  int kp = 100;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
   int error = getError(left_lineSensor, right_lineSensor, v_left_lineSensor, v_right_lineSensor);
   //Serial.println(error);
   static int left_speed;
@@ -201,10 +226,10 @@ int getError(int a, int b, int c, int d){
     error = -2;
   }
   else if(a==0 && b==0 && c==1 && d==0){
-    error = 4;
+    error = 5;
   }
   else if(a==0 && b==1 && c==0 && d==1){
-    error = -4;
+    error = -5;
   }
   else{
     error = 0;
@@ -264,7 +289,7 @@ left->setSpeed(0);
       delay(500);
       left->setSpeed(255);
   right->setSpeed(255);
-while((end_time-start_time)<3500){ //TURN IN
+while((end_time-start_time)<2000){ //TURN IN
       left->run(FORWARD); 
   right ->run(BACKWARD);
   end_time = millis();
@@ -277,7 +302,9 @@ while((end_time-start_time)<3500){ //TURN IN
       
       left->setSpeed(255);
   right->setSpeed(255);
-      while((end_time-start_time)<3500){ //turn out
+   start_time = millis();
+end_time = start_time;  
+      while((end_time-start_time)<1600){ //turn out
       left->run(BACKWARD); 
   right ->run(FORWARD);
   end_time = millis();   
@@ -311,7 +338,7 @@ left->setSpeed(0);
       delay(250);
       left->setSpeed(255);
   right->setSpeed(255);
-while((end_time-start_time)<3500){ //turn in
+while((end_time-start_time)<1500){ //turn in
       left->run(FORWARD); 
   right ->run(BACKWARD);
   end_time = millis();
@@ -324,7 +351,9 @@ while((end_time-start_time)<3500){ //turn in
       
       left->setSpeed(255);
   right->setSpeed(255);
-      while((end_time-start_time)<3500){ //turn out
+  start_time = millis();
+end_time = start_time;  
+      while((end_time-start_time)<1500){ //turn out
       left->run(BACKWARD); 
   right ->run(FORWARD);
   end_time = millis();
@@ -348,19 +377,19 @@ else{
 }
     }
   if(loop_num==3){
-    if(count==0){
+    if(count==0 || count ==-1 ){
       start_time = millis();
 end_time = start_time;  
 left->setSpeed(255);
   right->setSpeed(255);    
-while((end_time-start_time)<3500){
+while((end_time-start_time)<2000){
       left->run(BACKWARD); 
   right ->run(FORWARD);
   end_time = millis();
     }
      start_time = millis();
 end_time = start_time;      
-while((end_time-start_time)<1500){
+while((end_time-start_time)<3000){
       left->run(BACKWARD); 
   right ->run(BACKWARD);
   end_time = millis();
@@ -372,11 +401,11 @@ while((end_time-start_time)<1500){
   }
 }
 int ultrasonic_read() {
-		data = random(0, 3); // arduino random number in range (0,2)		
+		data = random(0, 2); // arduino random number in range (0,2)		
   if (data==1){
 		digitalWrite(redLedPin, HIGH)    ;
   }
-  else{
+  else if (data==0){
     digitalWrite(greenLedPin, HIGH)    ;
   }
   delay(5000);
@@ -434,6 +463,16 @@ left->setSpeed(255); //stop
       right->setSpeed(255);  
 while((end_time-start_time)<1350){
 left->run(FORWARD); //turn out
+  right ->run(BACKWARD);
+  end_time =millis();
+  }
+
+  start_time = millis();
+end_time = start_time;  
+left->setSpeed(255); //stop
+      right->setSpeed(255);  
+while((end_time-start_time)<1000){
+left->run(BACKWARD); // go forwards slightly
   right ->run(BACKWARD);
   end_time =millis();
   }
