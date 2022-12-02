@@ -117,7 +117,7 @@ void loop() {
 
   if((v_right_lineSensor ==1 && right_lineSensor ==1)||(v_left_lineSensor ==1 && left_lineSensor ==1)){ //right junction
 line_data.concat("1");
-if(line_data.length()>15){
+if(line_data.length()>13){
   junction_count++;
   line_data = "";
 }
@@ -168,6 +168,8 @@ void start_to_line(int count, int left_lineSensor){
   right->run(BACKWARD);
   }
   else if(count ==2){ //once main line reached
+
+
 
   start_time = millis();
 end_time = start_time;      
@@ -279,7 +281,7 @@ while((end_time-start_time)<2000){ //TURN IN
   right->setSpeed(255);
    start_time = millis();
 end_time = start_time;  
-      while((end_time-start_time)<2000){ //turn out
+      while((end_time-start_time)<1600){ //turn out
       left->run(BACKWARD); 
   right ->run(FORWARD);
   end_time = millis();   
@@ -313,7 +315,7 @@ left->setSpeed(0);
       delay(250);
       left->setSpeed(255);
   right->setSpeed(255);
-while((end_time-start_time)<2000){ //turn in
+while((end_time-start_time)<1500){ //turn in
       left->run(FORWARD); 
   right ->run(BACKWARD);
   end_time = millis();
@@ -328,7 +330,7 @@ while((end_time-start_time)<2000){ //turn in
   right->setSpeed(255);
   start_time = millis();
 end_time = start_time;  
-      while((end_time-start_time)<2000){ //turn out
+      while((end_time-start_time)<1500){ //turn out
       left->run(BACKWARD); 
   right ->run(FORWARD);
   end_time = millis();
@@ -352,6 +354,7 @@ else{
 }
     }
   if(loop_num==3){
+    collect_block();
     if(count==0 || count ==-1 ){
       start_time = millis();
 end_time = start_time;  
@@ -365,7 +368,7 @@ while((end_time-start_time)<2000){
      start_time = millis();
 end_time = start_time;      
 while((end_time-start_time)<3000){
-      left->run(BACKWARD); 
+      left->run(FORWARD); 
   right ->run(BACKWARD);
   end_time = millis();
     }
